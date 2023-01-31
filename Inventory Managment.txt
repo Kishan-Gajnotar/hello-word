@@ -1,0 +1,611 @@
+#include <cmath>
+#include <cstdio>
+#include <vector>
+#include <iostream>
+#include <algorithm>
+using namespace std;
+
+class item_node
+{
+    public :
+    long item_id;
+    string name;
+    float rate;
+    int quantity;
+    item_node *next;
+
+    item_node(long a,string b,float c,int d)
+    {
+        item_id = a;
+        name = b;
+        rate=c;
+        quantity=d;
+        next = NULL;
+    }
+};
+
+class customer_node
+{
+    public :
+    long customer_id;
+    string customer_name;
+    float points; 
+    customer_node *next;
+  
+    customer_node(long x,string y,float z)
+    {
+         customer_id=x;
+         customer_name=y;
+         points=z; 
+         next=NULL;
+    }
+};
+
+class item1_node
+{
+    public:
+    long item_id;
+    string name; 
+    float rate;
+    int quantity;
+    float amount; 
+    item1_node *next;
+  
+    item1_node(long x,string y,float z,int w)
+    {
+         item_id=x;
+         name=y;
+         rate=z;
+         quantity=w;
+         amount=z*w;
+         next=NULL;
+    }
+};
+
+
+class Inventory 
+{
+    private:
+    item_node** item_table;
+    int table_size = 10;
+    
+     void add_item(long item_id,string name,float rate,int quantity)
+    {
+        int index = item_id % table_size;
+        if(item_table[index]==NULL)
+        {
+            item_table[index]= new item_node(item_id,name,rate,quantity);
+        }
+        else
+        {
+            item_node *prev = NULL;
+            item_node *curr =item_table[index];
+            while(curr !=NULL && curr->item_id<item_id)
+            {
+                prev = curr;
+                curr = curr->next;
+            }
+            if(curr==NULL)
+            {
+                curr = new item_node(item_id,name,rate,quantity);
+                prev->next=curr;
+            }
+            else
+            {
+                if(prev==NULL)
+                {
+                    item_node *temp=new item_node(item_id,name,rate,quantity);
+                    item_table[index]=temp;
+                    temp->next = curr;
+                }
+                else
+                {
+                   item_node *temp = new item_node(item_id,name,rate,quantity);
+                   prev->next=temp;
+                   temp->next=curr;
+                }
+            }
+           
+        }
+        
+    }
+    
+    void delete_item(long item_id)
+    {
+        int index= hash_function(item_id);
+        
+        item_node *prev =NULL;
+        item_node *curr = item_table[index];
+        
+        while(curr->item_id!=item_id && curr!=NULL)
+        {
+            prev=curr;
+            curr=curr->next;
+        }
+        if(curr->item_id!=item_id)
+        {
+            cout<<" item was not found "<<endl;
+        }
+        else
+        {
+            if(prev == NULL)
+             {
+              
+              item_table[index]= curr->next;
+              delete curr;
+             }
+        
+            else
+             {
+                if(curr->next == NULL)
+                  {
+                    delete curr;
+                    prev->next=NULL;
+                  }
+            
+                else
+                  {
+                     prev->next=curr->next;
+                     delete curr;
+                  }
+            }
+        }
+    }
+    
+    
+    void update_item(long item_id,string name,float rate,int quantity) 
+    {
+        int index = hash_function(item_id);
+        item_node *prev= NULL;
+        item_node *curr = item_table[index];
+            
+        while(curr!=NULL && curr->item_id!=item_id)
+            {
+                prev=curr;
+                curr = curr->next;
+            }
+         if(curr!=NULL)
+         {
+             curr->item_id=item_id;
+             curr->name=name;
+             curr->rate=rate;
+             curr->quantity=quantity;
+         }
+
+    }
+    
+    public:
+    
+    friend class manager;
+    
+    Inventory()
+    {
+        item_table = new item_node*[table_size];
+        for(int i=0;i<table_size;i++)
+        {
+            item_table[i]=NULL;
+        }
+    }
+    
+    int hash_function(long item_id)
+    {
+        return (item_id % table_size);
+    }
+    
+    //for updating stock after create bill(make payment). it can only change the quantity
+    void update_stock(long item_id,int quantity) 
+    {
+        int index = hash_function(item_id);
+        item_node *prev= NULL;
+        item_node *curr = item_table[index];
+            
+        while(curr!=NULL && curr->item_id!=item_id)
+            {
+                prev=curr;
+                curr = curr->next;
+            }
+        //cout<<"prev quantity : "<<curr->quantity<<endl;
+         if(curr!=NULL)
+         {
+           curr->quantity=curr->quantity - quantity;
+         }
+        //cout<<"curr quantity : "<<curr->quantity;
+        //we can see previous and current quantity by removing above both comment
+    }
+    //for given product id it return node(all information of that product) of that id
+    item_node* get_product_info(long item_id) 
+    {
+       int index = hash_function(item_id);
+        item_node *prev= NULL;
+        item_node *curr = item_table[index];
+            
+        while(curr!=NULL && curr->item_id!=item_id)
+            {
+                prev=curr;
+                curr = curr->next;
+            }
+        if(curr==NULL)
+        {
+            cout<<"not found"<<endl;
+        }
+       /* cout<<"id : "<<curr->item_id<<endl;
+        cout<<"name : "<<curr->name<<endl;
+        cout<<"rate : "<<curr->rate<<endl;
+        cout<<"quantity : "<<curr->quantity<<endl;*/
+         return curr;
+       
+    }
+      
+};
+
+
+class manager
+{
+     private:
+     string manager_name;
+     long manager_id;
+     Inventory i;
+     
+     public :
+    
+      void Add_item(long item_id,string name,float rate,int quantity)
+            {
+                i.add_item(item_id,name,rate,quantity);
+            }
+            
+      void Delete_item(long item_id)
+            {
+                i.delete_item(item_id);
+            }
+            
+      void Update_item(long item_id , string name , float rate ,int quantity)
+            {
+                i.update_item(item_id,name,rate,quantity);
+            }
+            
+      void Update_stock(long item_id,int quantity)
+            {
+                i.update_stock(item_id,quantity);
+            }
+            
+      item_node* Get_Product_Info(long item_id)
+            {
+                item_node *p = i.get_product_info(item_id);
+                return (p);
+            }
+      void Display_Item_Information(long item_id)    
+             {
+                  item_node *p = i.get_product_info(item_id);
+                  cout<<"* ITEM INFORMATION *"<<endl<<endl;
+                  cout<<"item id : "<<p->item_id<<endl;
+                  cout<<"item name : "<<p->name<<endl;
+                  cout<<"item rate : "<<p->rate<<endl;
+                  cout<<"item quantity : "<<p->quantity<<endl;
+                 
+             }
+      void Display_Updated_stock_table(long item_id)
+      {
+          item_node *p = i.get_product_info(item_id);
+          cout<<"  "<<p->item_id<<"     "<<p->name<<"      "<<p->rate<<"         "<< p->quantity<<endl;
+      }
+       
+};
+
+class customer
+{
+    private:
+    customer_node** customer_table;
+    
+    public:
+    
+    int table_size = 10;
+    
+    customer()
+    {
+        customer_table = new customer_node*[table_size];
+        for(int i=0;i<table_size;i++)
+        {
+            customer_table[i]=NULL;
+        }
+    }
+    
+    int Hash_function(long customer_id)      //for finding the index of hash table
+    {
+        return (customer_id % table_size);
+    }
+    
+    void Add_customer(long customer_id,string customer_name,float points)
+    {
+        int index = Hash_function(customer_id);
+        if(customer_table[index]==NULL)
+        {
+            customer_table[index]= new customer_node(customer_id,customer_name,points);
+        }
+        else
+        {
+            customer_node *prev = NULL;
+            customer_node *curr =customer_table[index];
+            while(curr !=NULL && curr->customer_id<customer_id)
+            {
+                prev = curr;
+                curr = curr->next;
+            }
+            if(curr==NULL)
+            {
+                curr = new customer_node(customer_id,customer_name,points);
+                prev->next=curr;
+            }
+            else
+            {
+                if(prev==NULL)
+                {
+                    customer_node *temp=new customer_node(customer_id,customer_name,points);
+                    customer_table[index]=temp;
+                    temp->next = curr;
+                }
+                else
+                {
+                   customer_node *temp = new customer_node(customer_id,customer_name,points);
+                   prev->next=temp;
+                   temp->next=curr;
+                }
+            }
+           
+        }
+        
+    }
+    
+    void Update_points(long customer_id,float points)  //its for updating the customer point
+    {
+        int index = Hash_function(customer_id);
+        customer_node *prev= NULL;
+        customer_node *curr = customer_table[index];
+            
+        while(curr!=NULL && curr->customer_id != customer_id)
+            {
+                prev=curr;
+                curr = curr->next;
+            }
+         if(curr!=NULL)
+         {
+           curr->points = points;
+         }
+    }
+    
+};
+
+class billing : public customer,public Inventory
+{
+    private :
+    long Transaction_ID;
+    long Customer_id;
+    float Total_amount=0;
+    item1_node** bill_table;
+    int table_size = 10;
+     
+    public:
+    billing()
+    {
+        bill_table = new item1_node*[table_size];
+    
+        for(int i=0;i<table_size;i++)
+        {
+            bill_table[i]=NULL;
+        }
+    }
+   
+    void buy_item(long item_id,int quantity,manager *mp)
+    {
+        int index = item_id % table_size;
+        item_node *p = mp->Get_Product_Info(item_id);
+        
+        
+        if(bill_table[index]==NULL)
+        {
+            bill_table[index]= new item1_node(item_id,p->name,p->rate,quantity);
+        }
+        else
+        {
+            item1_node *prev = NULL;
+            item1_node *curr =bill_table[index];
+            while(curr !=NULL && curr->item_id<item_id)
+            {
+                prev = curr;
+                curr = curr->next;
+            }
+            if(curr==NULL)
+            {
+                curr = new item1_node(item_id,p->name,p->rate,quantity);
+                prev->next=curr;
+            }
+            else
+            {
+                if(prev==NULL)
+                {
+                    item1_node *temp=new item1_node(item_id,p->name,p->rate,quantity);
+                    bill_table[index]=temp;
+                    temp->next = curr;
+                }
+                else
+                {
+                   item1_node *temp = new item1_node(item_id,p->name,p->rate,quantity);
+                   prev->next=temp;
+                   temp->next=curr;
+                }
+            }
+           
+        }
+        //i update a stock in make payment function. i can also update stock hear
+        //  mp->Update_stock(item_id,quantity);   
+        
+    }
+    void Cancel_item(long item_id,int quantity,manager *mp)
+            {
+               int index = item_id % table_size;
+       
+               item1_node *prev = NULL;
+               item1_node *curr = bill_table[index];
+       
+              while(curr!=NULL && curr->item_id!=item_id)
+              {
+               prev=curr;
+               curr=curr->next;
+              }
+              
+              curr->quantity=curr->quantity-quantity;
+              
+              if(curr->quantity==0)
+              {
+              if(curr==NULL)
+              {
+              cout<<" item was not found "<<endl;
+              }
+             
+              else
+              {
+                if(prev == NULL)
+                {
+                 bill_table[index]= curr->next;
+                 delete curr;
+                }
+       
+                else
+                {
+                     prev->next=curr->next;
+                     delete curr;
+                }
+              }
+              }
+              //i update a stock in make payment function. i can also update stock hear
+             // mp->Update_stock(item_id,-curr->quantity);
+              
+              
+            }
+            
+            void assign_customer_id(long customer_id)
+            {
+                Customer_id = customer_id;
+            }
+            
+            void make_payment()
+            {
+                item1_node *temp; 
+                
+                cout<<"-----------------------------------------------------------"<<endl;
+                cout<<"                    * Customer Bill *                      "<<endl;
+                cout<<"-----------------------------------------------------------"<<endl<<endl;
+                cout<<"Transaction_ID = "<<rand()<<endl;
+                cout<<"Customer_ID    = "<<Customer_id<<endl<<endl;
+                
+                cout<<"Product ID     "<<"Name       "<<"Rate       "<<"Quantity     "<<"Amount"<<endl;
+                
+            
+       
+                for(int i=0;i<table_size;i++)
+                {
+                    
+                  temp = bill_table[i];
+                 
+                  while(temp!=NULL)
+                  {
+                   cout<<temp->item_id<<"     "<<temp->name<<"        "<<temp->rate<<"           "<<temp->quantity<<"           "<<temp->amount<<endl;
+                   
+                   Total_amount = Total_amount + temp->amount;
+                  
+                   temp=temp->next;
+                  }
+            
+                }
+                
+                Update_points(Customer_id,Total_amount);
+                
+                cout<<"                                            Total : "<<Total_amount<<endl;
+                cout<<"-----------------------------------------------------------"<<endl<<endl<<endl;
+            }
+            
+            void Print_Updated_Stock(manager *mp)
+            {   
+                item1_node *temp;
+                
+                cout<<"-----------------------------------------------------------"<<endl;
+                cout<<"                  * Updated Stock Table *                  "<<endl;
+                cout<<"-----------------------------------------------------------"<<endl<<endl;
+                 
+                cout<<"  Product ID     "<<"Name     "<<"Rate     "<<"Quantity"<<endl;
+                
+                for(int i=0;i<table_size;i++)
+                {
+                   temp = bill_table[i];
+                 
+                   while(temp!=NULL)
+                   {
+                     mp->Update_stock(temp->item_id,temp->quantity);
+                     
+                     mp->Display_Updated_stock_table(temp->item_id);
+                
+                     temp=temp->next;
+                   }
+                 }
+                cout<<"-----------------------------------------------------------"<<endl<<endl<<endl;
+            }
+
+    
+  
+};
+int main()
+{
+    manager m;
+    billing b;
+    
+    
+    long INVENTORY_DATASET[100][4] = {
+{111100000001,1,100,20},{111100000002,2,110,20},{111100000003,3,120,20},{111100000004,4,130,20},{111100000005,5,140,20},{111100000006,6,150,20},{111100000007,7,160,20},{111100000008,8,170,20},{111100000009,9,180,20},{111100000010,10,190,20},
+{111100000011,11,200,20},{111100000012,12,210,20},{111100000013,13,220,20},{111100000014,14,230,20},{111100000015,15,240,20},{111100000016,16,250,20},{111100000017,17,260,20},{111100000018,18,270,20},{111100000019,19,280,20},{111100000020,20,290,20},
+{111100000021,21,300,20},{111100000022,22,310,20},{111100000023,23,320,20},{111100000024,24,330,20},{111100000025,25,340,20},{111100000026,26,350,20},{111100000027,27,360,20},{111100000028,28,370,20},{111100000029,29,380,20},{111100000030,30,390,20},
+{111100000031,31,400,20},{111100000032,32,410,20},{111100000033,33,420,20},{111100000034,34,430,20},{111100000035,35,440,20},{111100000036,36,450,20},{111100000037,37,460,20},{111100000038,38,470,20},{111100000039,39,480,20},{111100000040,40,490,20},
+{111100000041,41,500,20},{111100000042,42,510,20},{111100000043,43,520,20},{111100000044,44,530,20},{111100000045,45,540,20},{111100000046,46,550,20},{111100000047,47,560,20},{111100000048,48,570,20},{111100000049,49,580,20},{222200001111,50,590,20},
+{222200001114,51,600,20},{222200001117,52,610,20},{222200001120,53,620,20},{222200001123,54,630,20},{222200001126,55,640,20},{222200001129,56,650,20},{222200001132,57,660,20},{222200001135,58,670,20},{222200001138,59,680,20},{222200001141,60,690,20},
+{222200001144,61,700,20},{222200001147,62,710,20},{222200001150,63,720,20},{222200001153,64,730,20},{222200001156,65,740,20},{222200001159,66,750,20},{222200001162,67,760,20},{222200001165,68,770,20},{222200001168,69,780,20},{222200001171,70,790,20},
+{222200001174,71,800,20},{222200001177,72,810,20},{222200001180,73,820,20},{222200001183,74,830,20},{222200001186,75,840,20},{222200001189,76,850,20},{222200001192,77,860,20},{222200001195,78,870,20},{222200001198,79,880,20},{222200001201,80,890,20},
+{222200001204,81,900,20},{222200001207,82,910,20},{222200001210,83,920,20},{222200001213,84,930,20},{222200001216,85,940,20},{222200001219,86,950,20},{222200001222,87,960,20},{222200001225,88,970,20},{222200001228,89,980,20},{222200001231,90,990,20},
+{222200001234,91,1000,20},{222200001237,92,1010,20},{222200001240,93,1020,20},{222200001243,94,1030,20},{222200001246,95,1040,20},{222200001249,96,1050,20},{222200001252,97,1060,20},{222200001255,98,1070,20},{222200001258,99,1080,20},{222200001261,100,1090,20}
+};
+    for(int k=0;k<100;k++)
+    {
+        m.Add_item(INVENTORY_DATASET[k][0],to_string(INVENTORY_DATASET[k][1]),INVENTORY_DATASET[k][2],INVENTORY_DATASET[k][3]);
+    }
+
+    
+    long CUSTOMER_DATASET[100][3] = {
+{9400000001,1,0},{9400000002,2,0},{9400000003,3,0},{9400000004,4,0},{9400000005,5,0},{9400000006,6,0},{9400000007,7,0},{9400000008,8,0},{9400000009,9,0},{9400000010,10,0},
+{9400000011,11,0},{9400000012,12,0},{9400000013,13,0},{9400000014,14,0},{9400000015,15,0},{9400000016,16,0},{9400000017,17,0},{9400000018,18,0},{9400000019,19,0},{9400000020,20,0},
+{9400000021,21,0},{9400000022,22,0},{9400000023,23,0},{9400000024,24,0},{9400000025,25,0},{9400000026,26,0},{9400000027,27,0},{9400000028,28,0},{9400000029,29,0},{9400000030,30,0},
+{9400000031,31,0},{9400000032,32,0},{9400000033,33,0},{9400000034,34,0},{9400000035,35,0},{9400000036,36,0},{9400000037,37,0},{9400000038,38,0},{9400000039,39,0},{9400000040,40,0},
+{9400000041,41,0},{9400000042,42,0},{9400000043,43,0},{9400000044,44,0},{9400000045,45,0},{9400000046,46,0},{9400000047,47,0},{9400000048,48,0},{9400000049,49,0},{9400000050,50,0},
+{9400000051,51,0},{9400000052,52,0},{9400000053,53,0},{9400000054,54,0},{9400000055,55,0},{9400000056,56,0},{9400000057,57,0},{9400000058,58,0},{9400000059,59,0},{9400000060,60,0},
+{9400000061,61,0},{9400000062,62,0},{9400000063,63,0},{9400000064,64,0},{9400000065,65,0},{9400000066,66,0},{9400000067,67,0},{9400000068,68,0},{9400000069,69,0},{9400000070,70,0},
+{9400000071,71,0},{9400000072,72,0},{9400000073,73,0},{9400000074,74,0},{9400000075,75,0},{9400000076,76,0},{9400000077,77,0},{9400000078,78,0},{9400000079,79,0},{9400000080,80,0},
+{9400000081,81,0},{9400000082,82,0},{9400000083,83,0},{9400000084,84,0},{9400000085,85,0},{9400000086,86,0},{9400000087,87,0},{9400000088,88,0},{9400000089,89,0},{9400000090,90,0},
+{9400000091,91,0},{9400000092,92,0},{9400000093,93,0},{9400000094,94,0},{9400000095,95,0},{9400000096,96,0},{9400000097,97,0},{9400000098,98,0},{9400000099,99,0},{9400000100,100,0},
+};
+    for(int k=0;k<100;k++)
+    {
+        b.Add_customer(CUSTOMER_DATASET[k][0],to_string(CUSTOMER_DATASET[k][1]),CUSTOMER_DATASET[k][2]);
+    }
+
+    b.assign_customer_id(9400000001);
+    
+    //pass the item id,quantity and address of manager object.    
+    b.buy_item(111100000001,2,&m);
+    b.buy_item(111100000002,2,&m);
+    b.buy_item(111100000003,2,&m);
+    b.Cancel_item(111100000001,1,&m);
+    b.make_payment(); //for making bill
+    //after payment its for printing updated stock
+    b.Print_Updated_Stock(&m);
+    //for displaying the perticular item information
+    m.Display_Item_Information(222200001261);
+    
+    
+    return 0;
+}
